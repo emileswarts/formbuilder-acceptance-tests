@@ -1,0 +1,120 @@
+version: '3'
+
+services:
+  publisher-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: publisher_local
+
+  publisher-app:
+    build:
+      context: .publisher
+      dockerfile: ./docker/web/Dockerfile
+    links:
+      - publisher-db
+    environment:
+      DATABASE_URL: "postgres://postgres:password@publisher-db/publisher_local"
+      SECRET_KEY_BASE: "xxxyyy"
+    ports:
+      - 3001:3000
+
+  publisher-worker:
+    build:
+      context: .publisher
+      dockerfile: docker/worker/Dockerfile
+    environment:
+      REDISCLOUD_URL: "publisher-redis"
+      QUEUE: "*"
+    links:
+      - publisher-redis
+    depends_on:
+      - publisher-app
+    ports:
+      - 8000:80
+
+  runner-app:
+    build:
+      context: .runner
+      dockerfile: Dockerfile
+    ports:
+      - 3003:3000
+    environment:
+      SERVICE_PATH: /home/deploy/.test-form
+    volumes:
+      - ".test-form:/home/deploy/.test-form"
+
+  submitter-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: submitter_local
+
+  submitter-app:
+    build:
+      context: .submitter
+      dockerfile: ./docker/api/Dockerfile
+    environment:
+      DATABASE_URL: "postgres://postgres:password@submitter-db/submitter_local"
+      NOTIFY_EMAIL_GENERIC: '46a72b64-9541-4000-91a7-fa8a3fa10bf9'
+      NOTIFY_EMAIL_RETURN_SETUP_EMAIL_TOKEN: '38f6a1cd-a810-4f59-8899-2c300236c5b4'
+      NOTIFY_EMAIL_RETURN_SETUP_EMAIL_VERIFIED: ''
+      NOTIFY_EMAIL_RETURN_SETUP_MOBILE_VERIFIED: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
+      NOTIFY_EMAIL_RETURN_SIGNIN_EMAIL: ''
+      NOTIFY_EMAIL_RETURN_SIGNIN_SUCCESS: ''
+      NOTIFY_SMS_GENERIC: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+      NOTIFY_SMS_RETURN_SETUP_MOBILE: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
+      NOTIFY_SMS_RETURN_SIGNIN_MOBILE: 'something'
+      NOTIFY_SMS_RETURN_SETUP_MOBILE: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
+      FB_ENVIRONMENT_SLUG: 'test'
+      SECRET_KEY_BASE: 'xxxyyy'
+    links:
+      - submitter-db
+
+  submitter-worker:
+    build:
+      context: .submitter
+      dockerfile: ./docker/worker/Dockerfile
+    environment:
+      DATABASE_URL: "postgres://postgres:password@submitter-db/submitter_local"
+      NOTIFY_EMAIL_GENERIC: '46a72b64-9541-4000-91a7-fa8a3fa10bf9'
+      NOTIFY_EMAIL_RETURN_SETUP_EMAIL_TOKEN: '38f6a1cd-a810-4f59-8899-2c300236c5b4'
+      NOTIFY_EMAIL_RETURN_SETUP_EMAIL_VERIFIED: ''
+      NOTIFY_EMAIL_RETURN_SETUP_MOBILE_VERIFIED: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
+      NOTIFY_EMAIL_RETURN_SIGNIN_EMAIL: ''
+      NOTIFY_EMAIL_RETURN_SIGNIN_SUCCESS: ''
+      NOTIFY_SMS_GENERIC: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+      NOTIFY_SMS_RETURN_SETUP_MOBILE: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
+      NOTIFY_SMS_RETURN_SIGNIN_MOBILE: 'something'
+      NOTIFY_SMS_RETURN_SETUP_MOBILE: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
+      FB_ENVIRONMENT_SLUG: 'test'
+      SECRET_KEY_BASE: 'xxxyyy'
+    links:
+      - submitter-db
+    command: bundle exec rake jobs:work
+
+  token-cache-app:
+    build:
+      context: .token-cache
+      dockerfile: ./Dockerfile
+    ports:
+      - 3004:3000
+    environment:
+      SECRET_KEY_BASE: 'super_secret'
+
+  av-app:
+    build:
+      context: .av
+      dockerfile: ./Dockerfile
+
+  publisher-redis:
+    image: 'bitnami/redis:5.0'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '6379:6379'
