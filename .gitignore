@@ -4,4 +4,6 @@
 .token-cache
 .fb-automated-tests
 .test-form
+.filestore
+.datastore
 .runner

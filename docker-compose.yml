@@ -9,6 +9,35 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: publisher_local
 
+  filestore-app:
+    build:
+      context: .filestore
+      dockerfile: ./Dockerfile
+    ports:
+      - '3006:3000'
+    environment:
+      SECRET_KEY_BASE: 'super_secret'
+
+  datastore-app:
+    build:
+      context: .datastore
+      dockerfile: ./Dockerfile
+    links:
+      - datastore-db
+    environment:
+      DATABASE_URL: "postgres://postgres:password@datastore-db/datastore_local"
+      SECRET_KEY_BASE: "xxxyyy"
+    ports:
+      - 3006:3000
+
+  datastore-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: datastore_local
+
   publisher-app:
     build:
       context: .publisher
@@ -19,7 +48,7 @@ services:
       DATABASE_URL: "postgres://postgres:password@publisher-db/publisher_local"
       SECRET_KEY_BASE: "xxxyyy"
     ports:
-      - 3001:3000
+      - 3005:3000
 
   publisher-worker:
     build:
@@ -43,6 +72,12 @@ services:
       - 3003:3000
     environment:
       SERVICE_PATH: /home/deploy/.test-form
+      SUBMITTER_URL: submitter-app
+      USER_DATASTORE_URL: datastore
+      USER_FILESTORE_URL: filestore
+      SERVICE_SECRET: sekrit
+      SERVICE_TOKEN: token
+      SERVICE_SLUG: slug
     volumes:
       - ".test-form:/home/deploy/.test-form"
 
