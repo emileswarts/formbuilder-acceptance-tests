@@ -26,7 +26,11 @@ services:
       - datastore-db
     environment:
       DATABASE_URL: "postgres://postgres:password@datastore-db/datastore_local"
+      RAILS_ENV: development
+      SERVICE_TOKEN: 21f0a1b35c51cf3fdbcd54bcc34e0cb3
       SECRET_KEY_BASE: "xxxyyy"
+      MAX_IAT_SKEW_SECONDS: "60"
+      SERVICE_TOKEN_CACHE_ROOT_URL: "http://token-cache-app:3000"
     ports:
       - 3006:3000
 
@@ -72,11 +76,11 @@ services:
       - 3003:3000
     environment:
       SERVICE_PATH: /home/deploy/.test-form
-      SUBMITTER_URL: submitter-app
-      USER_DATASTORE_URL: datastore
-      USER_FILESTORE_URL: filestore
-      SERVICE_SECRET: sekrit
-      SERVICE_TOKEN: token
+      SUBMITTER_URL: http://submitter-app:3000
+      USER_DATASTORE_URL: http://datastore-app:3000
+      USER_FILESTORE_URL: http://filestore:3000
+      SERVICE_SECRET: cd460e88c498b133ad11527e79a3d4ac
+      SERVICE_TOKEN: 8a7dc8f85a0b8245598eb07098304347
       SERVICE_SLUG: slug
     volumes:
       - ".test-form:/home/deploy/.test-form"
@@ -107,6 +111,7 @@ services:
       NOTIFY_SMS_RETURN_SETUP_MOBILE: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
       FB_ENVIRONMENT_SLUG: 'test'
       SECRET_KEY_BASE: 'xxxyyy'
+      PDF_GENERATOR_ROOT_URL: 'pdf-generator:3000'
     links:
       - submitter-db
 
@@ -128,6 +133,7 @@ services:
       NOTIFY_SMS_RETURN_SETUP_MOBILE: '54dcaad7-4967-431d-8606-72b0b80b5c6a'
       FB_ENVIRONMENT_SLUG: 'test'
       SECRET_KEY_BASE: 'xxxyyy'
+      PDF_GENERATOR_ROOT_URL: 'pdf-generator:3000'
     links:
       - submitter-db
     command: bundle exec rake jobs:work
@@ -145,6 +151,14 @@ services:
     build:
       context: .av
       dockerfile: ./Dockerfile
+
+  pdf-generator:
+    build:
+      context: .pdf-generator
+      dockerfile: ./Dockerfile
+    environment:
+      SERVICE_TOKEN_CACHE_ROOT_URL: "token-cache-app:3000"
+      SENTRY_DSN: 'whatever'
 
   publisher-redis:
     image: 'bitnami/redis:5.0'

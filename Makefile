@@ -1,4 +1,4 @@
-setup: .publisher .runner .submitter .av .token-cache .test-form .datastore .filestore
+setup: .publisher .runner .submitter .av .token-cache .test-form .datastore .filestore .pdf-generator
 
 .filestore:
 	git clone git@github.com:ministryofjustice/fb-user-filestore.git .filestore
@@ -22,12 +22,15 @@ setup: .publisher .runner .submitter .av .token-cache .test-form .datastore .fil
 	git clone git@github.com:ministryofjustice/fb-service-token-cache .token-cache
 
 .test-form:
-	git clone git@github.com:ministryofjustice/claim-for-costs-of-a-childs-funeral.git .test-form
+	git clone git@github.com:ministryofjustice/fb-hmcts-complaints.git .test-form
 
 .test-runner:
 	git clone git@github.com:ministryofjustice/claim-for-costs-of-a-childs-funeral.git .test-form
 
-destroy: .publisher .runner .submitter .av .token-cache .test-form .datastore .filestore
+.pdf-generator:
+	git clone git@github.com:ministryofjustice/fb-pdf-generator.git .pdf-generator
+
+destroy: .publisher .runner .submitter .av .token-cache .test-form .datastore .filestore .pdf-generator
 	docker-compose down
 
 stop:
@@ -35,16 +38,16 @@ stop:
 
 build: setup
 	echo HEAD > .runner/APP_SHA
-	docker-compose build --build-arg BUNDLE_FLAGS=''
+	docker-compose build --build-arg BUNDLE_FLAGS='' --build-arg BUNDLE_ARGS='' --parallel
 
 serve: build
 	docker-compose up -d publisher-db submitter-db datastore-db
 	docker-compose up -d publisher-redis
 	./scripts/wait_for_db datastore-db postgres && ./scripts/wait_for_db publisher-db postgres && ./scripts/wait_for_db submitter-db postgres
-	docker-compose up -d submitter-app publisher-app publisher-worker runner-app submitter-worker token-cache-app av-app
+	docker-compose up -d submitter-app publisher-app publisher-worker runner-app submitter-worker token-cache-app av-app pdf-generator datastore-app
 
 spec: serve
 	docker-compose run --rm app bundle exec rspec
 
 clean:
-	rm -fr .publisher .runner .submitter .av .token-cache .test-form .datastore .filestore
+	rm -fr .publisher .runner .submitter .av .token-cache .test-form .datastore .filestore .pdf-generator
