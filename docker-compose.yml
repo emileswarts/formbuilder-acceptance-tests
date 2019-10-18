@@ -27,7 +27,7 @@ services:
     environment:
       DATABASE_URL: "postgres://postgres:password@datastore-db/datastore_local"
       RAILS_ENV: development
-      SERVICE_TOKEN: 21f0a1b35c51cf3fdbcd54bcc34e0cb3
+      SERVICE_TOKEN: "xyz"
       SECRET_KEY_BASE: "xxxyyy"
       MAX_IAT_SKEW_SECONDS: "60"
       SERVICE_TOKEN_CACHE_ROOT_URL: "http://token-cache-app:3000"
@@ -79,9 +79,9 @@ services:
       SUBMITTER_URL: http://submitter-app:3000
       USER_DATASTORE_URL: http://datastore-app:3000
       USER_FILESTORE_URL: http://filestore:3000
-      SERVICE_SECRET: cd460e88c498b133ad11527e79a3d4ac
-      SERVICE_TOKEN: 8a7dc8f85a0b8245598eb07098304347
-      SERVICE_SLUG: slug
+      SERVICE_SECRET: 'xyz'
+      SERVICE_TOKEN: 'xyz'
+      SERVICE_SLUG: test-form
     volumes:
       - ".test-form:/home/deploy/.test-form"
 
